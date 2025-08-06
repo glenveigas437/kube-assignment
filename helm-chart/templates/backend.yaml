@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: {{ .Values.backend.image }}
+          ports:
+            - containerPort: {{ .Values.backend.port }}
+          env:
+            - name: PORT
+              value: "{{ .Values.backend.env.PORT }}"
+            - name: ATLAS_URI
+              value: "{{ .Values.backend.env.ATLAS_URI }}"
+            - name: HASH_KEY
+              value: "{{ .Values.backend.env.HASH_KEY }}"
+            - name: JWT_SECRET_KEY
+              value: "{{ .Values.backend.env.JWT_SECRET_KEY }}"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+spec:
+  selector:
+    app: backend
+  ports:
+    - protocol: TCP
+      port: {{ .Values.backend.port }}
+      targetPort: {{ .Values.backend.port }}
+  type: ClusterIP

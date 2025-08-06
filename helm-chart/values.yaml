@@ -1,0 +1,22 @@
+# Default values for learnerreport-mern Helm chart.
+replicaCount: 1
+
+backend:
+  image: glenveigas4/learnerreport-backend:latest
+  port: 3001
+  env:
+    PORT: 3001
+    ATLAS_URI: mongodb://mongodb-service:27017/learner_reportDB
+    HASH_KEY: thisIsMyHashKey
+    JWT_SECRET_KEY: thisIsMyJwtSecretKey
+
+frontend:
+  image: glenveigas4/learnerreport-frontend:latest
+  port: 3000
+  env:
+    REACT_APP_API_BASE_URL: http://backend-service:3001
+
+mongodb:
+  image: mongo:latest
+  port: 27017
+  storage: 1Gi

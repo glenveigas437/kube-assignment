@@ -58,20 +58,16 @@ pipeline {
                     // Verify login was successful
                     sh "docker info | grep Username"
                     
-                    // Push images with retry logic and timeout handling
-                    retry(3) {
-                        sh """
-                            echo "Pushing backend image..."
-                            timeout 600 docker push $BACKEND_IMAGE
-                        """
-                    }
+                    // Push images with simple retry logic
+                    sh """
+                        echo "Pushing backend image..."
+                        docker push $BACKEND_IMAGE || (echo "Backend push failed, retrying..." && sleep 5 && docker push $BACKEND_IMAGE) || (echo "Backend push failed again, final retry..." && sleep 10 && docker push $BACKEND_IMAGE)
+                    """
                     
-                    retry(3) {
-                        sh """
-                            echo "Pushing frontend image..."
-                            timeout 600 docker push $FRONTEND_IMAGE
-                        """
-                    }
+                    sh """
+                        echo "Pushing frontend image..."
+                        docker push $FRONTEND_IMAGE || (echo "Frontend push failed, retrying..." && sleep 5 && docker push $FRONTEND_IMAGE) || (echo "Frontend push failed again, final retry..." && sleep 10 && docker push $FRONTEND_IMAGE)
+                    """
                 }
             }
         }

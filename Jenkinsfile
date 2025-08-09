@@ -15,6 +15,12 @@ pipeline {
             steps {
                 dir('learnerReportCS_backend') {
                     script {
+                        // Debug: List files to verify Dockerfile exists
+                        sh "ls -la"
+                        sh "pwd"
+                        // Verify Dockerfile content
+                        sh "cat Dockerfile"
+                        // Build with verbose output
                         sh "docker build -t $BACKEND_IMAGE ."
                     }
                 }
@@ -24,6 +30,12 @@ pipeline {
             steps {
                 dir('learnerReportCS_frontend') {
                     script {
+                        // Debug: List files to verify Dockerfile exists
+                        sh "ls -la"
+                        sh "pwd"
+                        // Verify Dockerfile content
+                        sh "cat Dockerfile"
+                        // Build with verbose output
                         sh "docker build -t $FRONTEND_IMAGE ."
                     }
                 }
@@ -32,9 +44,34 @@ pipeline {
         stage('Push Images to Docker Hub') {
             steps {
                 script {
-                    sh "echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_USER --password-stdin"
-                    sh "docker push $BACKEND_IMAGE"
-                    sh "docker push $FRONTEND_IMAGE"
+                    // Debug: Show Docker version and login status
+                    sh "docker --version"
+                    sh "docker info | grep Username || echo 'Not logged in'"
+                    
+                    // Login to Docker Hub with better error handling
+                    sh """
+                        echo "Logging in to Docker Hub as user: \$DOCKERHUB_USER"
+                        echo "Password length: \$(echo \$DOCKERHUB_CREDENTIALS_PSW | wc -c)"
+                        echo \$DOCKERHUB_CREDENTIALS_PSW | docker login -u \$DOCKERHUB_USER --password-stdin
+                    """
+                    
+                    // Verify login was successful
+                    sh "docker info | grep Username"
+                    
+                    // Push images with retry logic and timeout handling
+                    retry(3) {
+                        sh """
+                            echo "Pushing backend image..."
+                            timeout 600 docker push $BACKEND_IMAGE
+                        """
+                    }
+                    
+                    retry(3) {
+                        sh """
+                            echo "Pushing frontend image..."
+                            timeout 600 docker push $FRONTEND_IMAGE
+                        """
+                    }
                 }
             }
         }
